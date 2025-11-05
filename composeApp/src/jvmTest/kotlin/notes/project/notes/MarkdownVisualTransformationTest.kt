@@ -58,7 +58,7 @@ class MarkdownVisualTransformationTest {
     @Test
     fun `Cursor mapping is correct for bold`() {
         val text = "This has **bold** text"
-        // 0-8 before bold, 8-12 during bold, 12-19 after bold
+        // 0-8 before bold, 8-12 during bold, 12-17 after bold
         val expected = (0..8) + 8 + (8..12) + 12 + (12..17)
 
         checkCursorMappings(text, expected)
