@@ -99,7 +99,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                 appendPlainText(token.start)
 
                 // If the cursor is inside the token, don't hide the Markdown element.
-                if (cursorPosition in token.start until token.end) {
+                if (cursorPosition in token.start..token.end) {
                     appendPlainText(token.end)
                     return@forEach
                 }
