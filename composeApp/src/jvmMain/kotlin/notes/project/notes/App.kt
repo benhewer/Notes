@@ -28,10 +28,10 @@ fun App() {
                 TextFieldValue("This is some **default text**")
             ) }
 
-            TextField(
+            MarkdownTextField(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 value = body,
                 onValueChange = { body = it },
             )
