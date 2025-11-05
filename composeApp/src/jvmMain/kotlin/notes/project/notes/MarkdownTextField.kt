@@ -20,6 +20,8 @@ fun MarkdownTextField(
             text = it
             onValueChange(text)
         },
-        visualTransformation = MarkdownVisualTransformation(),
+        visualTransformation = MarkdownVisualTransformation(
+            cursorPosition = text.selection.start,
+        ),
     )
 }
