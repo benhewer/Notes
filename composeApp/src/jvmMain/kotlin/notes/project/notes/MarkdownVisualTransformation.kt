@@ -13,7 +13,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 
-class MarkdownVisualTransformation : VisualTransformation {
+class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTransformation {
 
     private val mapping = mutableMapOf<Int, Int>()
 
@@ -31,7 +31,7 @@ class MarkdownVisualTransformation : VisualTransformation {
         }
 
         override fun transformedToOriginal(offset: Int): Int {
-            return mapping.entries.last { it.value <= offset }.value
+            return mapping.entries.last { it.value <= offset }.key
         }
     }
 
@@ -97,6 +97,12 @@ class MarkdownVisualTransformation : VisualTransformation {
                 }
 
                 appendPlainText(token.start)
+
+                // If the cursor is inside the token, don't hide the Markdown element.
+                if (cursorPosition in token.start until token.end) {
+                    appendPlainText(token.end)
+                    return@forEach
+                }
 
                 // Style the token text with the correct Markdown.
                 when (token.type) {
