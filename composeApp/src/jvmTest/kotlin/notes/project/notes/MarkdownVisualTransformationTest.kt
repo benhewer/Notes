@@ -9,19 +9,19 @@ import kotlin.test.assertEquals
 
 class MarkdownVisualTransformationTest {
 
-    val transformation = MarkdownVisualTransformation()
+    val transformation = MarkdownVisualTransformation(0)
     val offsetMapping = transformation.MarkdownOffsetMapping()
 
     @Test
     fun `Bold text is parsed correctly`() {
-        val text = "**This should be bold**"
+        val text = "This **should be bold**"
         val transformedText = transformation.filter(AnnotatedString(text)).text
 
         val expected = buildAnnotatedString {
             append("This should be bold")
             addStyle(
                 SpanStyle(fontWeight = FontWeight.Bold),
-                0,
+                5,
                 length
             )
         }
