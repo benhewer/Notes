@@ -27,11 +27,11 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
     inner class MarkdownOffsetMapping : OffsetMapping {
 
         override fun originalToTransformed(offset: Int): Int {
-            return mapping[offset] ?: 0
+            return mapping[offset]!!
         }
 
         override fun transformedToOriginal(offset: Int): Int {
-            return mapping.entries.last { it.value <= offset }.key
+            return mapping.entries.last { it.value == offset }.key
         }
     }
 
@@ -238,6 +238,9 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                 currentIndex = token.end
             }
             appendPlainText(markdown.length)
+
+            // Add the final mapping at markdown.length index.
+            mapping[currentIndex++] = transformedIndex++
 
             toAnnotatedString()
         }
