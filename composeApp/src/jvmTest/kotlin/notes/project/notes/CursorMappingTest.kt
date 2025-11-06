@@ -44,6 +44,15 @@ class CursorMappingTest {
     }
 
     @Test
+    fun `Skipping mappings works when mapping is empty`() {
+        mapping.skipMappings(1)
+        mapping.addPlainMapping()
+
+        assertEquals(0, mapping[0])
+        assertEquals(0, mapping[1])
+    }
+
+    @Test
     fun `Skip add skip mapping works`() {
         mapping.addPlainMapping()
         mapping.skipAddSkipMappings(2, 5)

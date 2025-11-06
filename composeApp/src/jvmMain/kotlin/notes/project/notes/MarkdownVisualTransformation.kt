@@ -36,13 +36,16 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
     }
 
     private fun parseMarkdownToAnnotatedString(markdown: String): AnnotatedString {
+        fun notAllWhitespaceOr(forbidden: String): String {
+            return "(?=[\\s\\S]*[^\\s$forbidden])[\\s\\S]+?"
+        }
         // Define regex patterns.
         val patterns = listOf(
             TokenType.LINK to """\[(.*?)]\((.*?)\)""".toRegex(),
-            TokenType.BOLD to """(?<!\*)\*\*([^*]+?)\*\*(?!\*)""".toRegex(),
-            TokenType.ITALIC to """(?<!\*)\*([^*]+?)\*(?!\*)""".toRegex(),
-            TokenType.CODE_BLOCK to """```(.*?)```""".toRegex(RegexOption.DOT_MATCHES_ALL),
-            TokenType.INLINE_CODE to """(?<!`)`([^`]?)(?!`)`""".toRegex(),
+            TokenType.BOLD to """(?<!\*)\*\*(${notAllWhitespaceOr("\\*")})\*\*(?!\*)""".toRegex(),
+            TokenType.ITALIC to """(?<!\*)\*(${notAllWhitespaceOr("\\*")})\*(?!\*)""".toRegex(),
+            TokenType.CODE_BLOCK to """(?<!`)```(${notAllWhitespaceOr("`")})```(?!`)""".toRegex(RegexOption.DOT_MATCHES_ALL),
+            TokenType.INLINE_CODE to """(?<!`)`([^`]+?)(?!`)`""".toRegex(),
             TokenType.HEADING to """^(#{1,2})\s*(.*)""".toRegex(RegexOption.MULTILINE),
             TokenType.LIST to """^- (.*)""".toRegex(RegexOption.MULTILINE),
             TokenType.BLOCKQUOTE to """^>\s+(.*)""".toRegex(RegexOption.MULTILINE),
@@ -90,6 +93,8 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                 // With plain text, the mapping is simple.
                 val mappingsToAdd = upTo - currentIndex
                 mapping.addPlainMappings(mappingsToAdd)
+
+                currentIndex = upTo
             }
 
             tokens.forEach { token ->
@@ -108,7 +113,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                 // Style the token text with the correct Markdown.
                 when (token.type) {
                     TokenType.CODE_BLOCK -> {
-                        val codeContent = token.groups[0].trim()
+                        val codeContent = token.groups[0]
                         val styleStart = this.length
                         append(codeContent)
                         addStyle(

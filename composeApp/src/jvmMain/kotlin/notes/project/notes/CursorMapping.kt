@@ -30,11 +30,21 @@ class CursorMapping {
     }
 
     fun skipMappings(count: Int) {
-        transformedIndex--
-        (0..<count - 1).forEach { _ ->
-            mapping[currentIndex++] = transformedIndex
+        // If not empty, the mapping will be on the correct
+        // index, but too far forward with the transformedIndex
+        if (mapping.isNotEmpty()) {
+            transformedIndex--
+
+            (0..<count - 1).forEach { _ ->
+                mapping[currentIndex++] = transformedIndex
+            }
+            addPlainMapping()
+        } else {
+            mapping[currentIndex] = transformedIndex
+            (0..<count).forEach { _ ->
+                mapping[currentIndex++] = transformedIndex
+            }
         }
-        addPlainMapping()
     }
 
     // Used for adding mappings for text like **bold**.
@@ -45,4 +55,6 @@ class CursorMapping {
         addPlainMappings(add)
         skipMappings(skip)
     }
+
+    override fun toString(): String = mapping.toString()
 }
