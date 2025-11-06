@@ -1,4 +1,9 @@
 package notes.project.notes
 
-class OpenUrl {
+import java.awt.Desktop
+import java.net.URI
+
+actual fun openUrl(urlString: String) {
+    val url = URI(urlString)
+    Desktop.getDesktop().browse(url)
 }
