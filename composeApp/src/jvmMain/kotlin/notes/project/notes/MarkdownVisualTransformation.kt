@@ -39,8 +39,8 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
         // Define regex patterns.
         val patterns = listOf(
             TokenType.LINK        to """\[(.*?)\]\((.*?)\)""".toRegex(),
-            TokenType.BOLD        to """\*\*(.*?)\*\*""".toRegex(),
-            TokenType.ITALIC      to """\*(.*?)\*""".toRegex(),
+            TokenType.BOLD        to """(?<!\*)\*\*([^*]+?)\*\*(?!\*)""".toRegex(),
+            TokenType.ITALIC      to """(?<!\*)\*([^*]+?)\*(?!\*)""".toRegex(),
             TokenType.CODE_BLOCK  to """```([\s\S]*?)```""".toRegex(),
             TokenType.INLINE_CODE to """`(.*?)`""".toRegex(),
             TokenType.HEADING     to """^(#{1,2})\s*(.*)""".toRegex(RegexOption.MULTILINE),
