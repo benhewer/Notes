@@ -156,6 +156,21 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                             start = styleStart,
                             end = this.length
                         )
+
+                        // Adding the mappings up to the end of link text
+                        transformedIndex--
+                        (0..linkText.length).forEach { _ ->
+                            mapping[currentIndex++] = transformedIndex++
+                        }
+
+                        // Adding the mappings for the end brace and link url
+                        transformedIndex--
+                        // Add 2 for each bracket
+                        val totalLinkLength = linkUrl.length + 2
+                        (0..totalLinkLength).forEach { _ ->
+                            mapping[currentIndex++] = transformedIndex
+                        }
+                        transformedIndex++
                     }
 
                     TokenType.BOLD -> {

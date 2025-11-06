@@ -100,8 +100,8 @@ class MarkdownVisualTransformationTest {
     @Test
     fun `Cursor mapping is correct for link`() {
         val text = "This is a [link](google.com)"
-        // Ranges represent: "This is a ", "[link", "]", "(google.com)"
-        val expected = (0..9) + (9..13) + 13 + List("(google.com)".length) { 13 }
+        // Ranges represent: "This is a ", "[link", "]", "(google.com)", " "
+        val expected = (0..9) + (9..13) + 13 + List("(google.com)".length) { 13 } + 14
 
         checkCursorMappings(text, expected)
     }
