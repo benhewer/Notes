@@ -4,8 +4,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.sp
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -61,6 +63,30 @@ class MarkdownVisualTransformationTest {
         assertEquals(expected, transformedText)
     }
 
+    @Test
+    fun `Code block text is parsed correctly`() {
+        val text = "This is ```SomeCode() { " +
+                "// do something" +
+                "}```"
+        val transformedText = transformation.filter(AnnotatedString(text)).text
+
+        val expected = buildAnnotatedString {
+            append("This is SomeCode() { " +
+                    "// do something" +
+                    "}")
+            addStyle(
+                SpanStyle(
+                    background = Color(0xFFEFEFEF),
+                    color = Color(0xFF333333),
+                    fontSize = 16.sp,
+                    fontFamily = FontFamily.Monospace
+                ),
+                8,
+                length
+            )
+        }
+    }
+
     fun checkCursorMappings(text: String, expected: List<Int>) {
         // Used to update mapping table.
         transformation.filter(AnnotatedString(text)).text
@@ -102,6 +128,16 @@ class MarkdownVisualTransformationTest {
         val text = "This is a [link](google.com)"
         // Ranges represent: "This is a ", "[link", "]", "(google.com)", " "
         val expected = (0..9) + (9..13) + 13 + List("(google.com)".length) { 13 } + 14
+
+        checkCursorMappings(text, expected)
+    }
+
+    @Test
+    fun`Cursor mapping is correct for code block`() {
+        val text = "This is ```SomeCode() { \n" +
+                "// do something\n" +
+                "}```"
+        val expected = (0..7) + 7 + 7 + (7..38) + 38 + 38 + 38 + 39
 
         checkCursorMappings(text, expected)
     }

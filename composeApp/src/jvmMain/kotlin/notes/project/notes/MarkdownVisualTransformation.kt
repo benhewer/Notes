@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.sp
 
 class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTransformation {
 
-    private val mapping = mutableMapOf<Int, Int>()
+    private val mapping = CursorMapping()
 
     override fun filter(text: AnnotatedString): TransformedText {
         val markdown = text.toString()
@@ -27,25 +27,25 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
     inner class MarkdownOffsetMapping : OffsetMapping {
 
         override fun originalToTransformed(offset: Int): Int {
-            return mapping[offset]!!
+            return mapping[offset]
         }
 
         override fun transformedToOriginal(offset: Int): Int {
-            return mapping.entries.last { it.value == offset }.key
+            return mapping.getOriginalFromTransformed(offset)
         }
     }
 
     private fun parseMarkdownToAnnotatedString(markdown: String): AnnotatedString {
         // Define regex patterns.
         val patterns = listOf(
-            TokenType.LINK        to """\[(.*?)\]\((.*?)\)""".toRegex(),
-            TokenType.BOLD        to """(?<!\*)\*\*([^*]+?)\*\*(?!\*)""".toRegex(),
-            TokenType.ITALIC      to """(?<!\*)\*([^*]+?)\*(?!\*)""".toRegex(),
-            TokenType.CODE_BLOCK  to """```([\s\S]*?)```""".toRegex(),
-            TokenType.INLINE_CODE to """`(.*?)`""".toRegex(),
-            TokenType.HEADING     to """^(#{1,2})\s*(.*)""".toRegex(RegexOption.MULTILINE),
-            TokenType.LIST        to """^- (.*)""".toRegex(RegexOption.MULTILINE),
-            TokenType.BLOCKQUOTE  to """^>\s+(.*)""".toRegex(RegexOption.MULTILINE),
+            TokenType.LINK to """\[(.*?)]\((.*?)\)""".toRegex(),
+            TokenType.BOLD to """(?<!\*)\*\*([^*]+?)\*\*(?!\*)""".toRegex(),
+            TokenType.ITALIC to """(?<!\*)\*([^*]+?)\*(?!\*)""".toRegex(),
+            TokenType.CODE_BLOCK to """```(.*?)```""".toRegex(RegexOption.DOT_MATCHES_ALL),
+            TokenType.INLINE_CODE to """(?<!`)`([^`]?)(?!`)`""".toRegex(),
+            TokenType.HEADING to """^(#{1,2})\s*(.*)""".toRegex(RegexOption.MULTILINE),
+            TokenType.LIST to """^- (.*)""".toRegex(RegexOption.MULTILINE),
+            TokenType.BLOCKQUOTE to """^>\s+(.*)""".toRegex(RegexOption.MULTILINE),
         )
 
         // For each pattern, find all examples of regex matches in the Markdown text
@@ -74,21 +74,22 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
             // string in order.
             .sortedBy { it.start }
 
+        mapping.resetMapping()
+
         var currentIndex = 0
-        var transformedIndex = 0
 
         return buildAnnotatedString {
             fun appendPlainText(upTo: Int) {
-                if (upTo > currentIndex) {
-                    // Add plain text before the token.
-                    append(markdown.substring(currentIndex, upTo))
-
-                    // Update the mapping to include up to token.start.
-                    // With plain text, the mapping is simple (just incrementing).
-                    (currentIndex..<upTo).forEach { _ ->
-                        mapping[currentIndex++] = transformedIndex++
-                    }
+                if (upTo < currentIndex) {
+                    return
                 }
+                // Add plain text before the token.
+                append(markdown.substring(currentIndex, upTo))
+
+                // Update the mapping to include up to token.start.
+                // With plain text, the mapping is simple.
+                val mappingsToAdd = upTo - currentIndex
+                mapping.addPlainMappings(mappingsToAdd)
             }
 
             tokens.forEach { token ->
@@ -120,6 +121,9 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                             styleStart,
                             this.length
                         )
+
+                        val codeBlockMarkdownLength = 3
+                        mapping.skipAddSkipMappings(codeBlockMarkdownLength, codeContent.length)
                     }
 
                     TokenType.INLINE_CODE -> {
@@ -157,20 +161,14 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                             end = this.length
                         )
 
-                        // Adding the mappings up to the end of link text
-                        transformedIndex--
-                        (0..linkText.length).forEach { _ ->
-                            mapping[currentIndex++] = transformedIndex++
-                        }
+                        // Adding the mappings up to the end of link
+                        mapping.skipMappings(1)
+                        mapping.addPlainMappings(linkText.length)
+                        mapping.skipMappings(1)
 
-                        // Adding the mappings for the end brace and link url
-                        transformedIndex--
-                        // Add 2 for each bracket
+                        // Adding the mappings for the link url
                         val totalLinkLength = linkUrl.length + 2
-                        (0..totalLinkLength).forEach { _ ->
-                            mapping[currentIndex++] = transformedIndex
-                        }
-                        transformedIndex++
+                        mapping.skipMappings(totalLinkLength)
                     }
 
                     TokenType.BOLD -> {
@@ -183,16 +181,8 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                             this.length
                         )
 
-                        transformedIndex--
-                        mapping[currentIndex++] = transformedIndex
-
-                        (0..boldContent.length).forEach { _ ->
-                            mapping[currentIndex++] = transformedIndex++
-                        }
-
-                        transformedIndex--
-                        mapping[currentIndex++] = transformedIndex
-                        mapping[currentIndex++] = transformedIndex++
+                        val boldMarkdownLength = 2
+                        mapping.skipAddSkipMappings(boldMarkdownLength, boldContent.length)
                     }
 
                     TokenType.ITALIC -> {
@@ -205,13 +195,8 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                             this.length
                         )
 
-                        transformedIndex--
-                        (0..italicContent.length).forEach { _ ->
-                            mapping[currentIndex++] = transformedIndex++
-                        }
-
-                        transformedIndex--
-                        mapping[currentIndex++] = transformedIndex++
+                        val italicsMarkdownLength = 1
+                        mapping.skipAddSkipMappings(italicsMarkdownLength, italicContent.length)
                     }
 
                     TokenType.HEADING -> {
@@ -255,7 +240,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
             appendPlainText(markdown.length)
 
             // Add the final mapping at markdown.length index.
-            mapping[currentIndex++] = transformedIndex++
+            mapping.addPlainMapping()
 
             toAnnotatedString()
         }
