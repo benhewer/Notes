@@ -12,6 +12,14 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
+import notes.project.notes.ui.theme.blockquoteStyle
+import notes.project.notes.ui.theme.boldStyle
+import notes.project.notes.ui.theme.codeBlockStyle
+import notes.project.notes.ui.theme.headingStyle1
+import notes.project.notes.ui.theme.headingStyle2
+import notes.project.notes.ui.theme.inlineCodeStyle
+import notes.project.notes.ui.theme.italicStyle
+import notes.project.notes.ui.theme.linkStyle
 
 class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTransformation {
 
@@ -45,10 +53,10 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
             TokenType.BOLD to """(?<!\*)\*\*(${notAllWhitespaceOr("\\*")})\*\*(?!\*)""".toRegex(),
             TokenType.ITALIC to """(?<!\*)\*(${notAllWhitespaceOr("\\*")})\*(?!\*)""".toRegex(),
             TokenType.CODE_BLOCK to """(?<!`)```(${notAllWhitespaceOr("`")})```(?!`)""".toRegex(RegexOption.DOT_MATCHES_ALL),
-            TokenType.INLINE_CODE to """(?<!`)`([^`]+?)(?!`)`""".toRegex(),
-            TokenType.HEADING to """^(#{1,2})\s*(.*)""".toRegex(RegexOption.MULTILINE),
+            TokenType.INLINE_CODE to """(?<!`)`([^`]+?)`(?!`)""".toRegex(),
+            TokenType.HEADING to """^(#{1,2})\s(.*)""".toRegex(RegexOption.MULTILINE),
             TokenType.LIST to """^- (.*)""".toRegex(RegexOption.MULTILINE),
-            TokenType.BLOCKQUOTE to """^>\s+(.*)""".toRegex(RegexOption.MULTILINE),
+            TokenType.BLOCKQUOTE to """^>(\s+)(.*)""".toRegex(RegexOption.MULTILINE),
         )
 
         // For each pattern, find all examples of regex matches in the Markdown text
@@ -117,12 +125,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                         val styleStart = this.length
                         append(codeContent)
                         addStyle(
-                            SpanStyle(
-                                background = Color(0xFFEFEFEF),
-                                color = Color(0xFF333333),
-                                fontSize = 16.sp,
-                                fontFamily = FontFamily.Monospace
-                            ),
+                            codeBlockStyle,
                             styleStart,
                             this.length
                         )
@@ -136,14 +139,13 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                         val styleStart = this.length
                         append(codeContent)
                         addStyle(
-                            SpanStyle(
-                                background = Color.LightGray,
-                                fontSize = 14.sp,
-                                fontFamily = FontFamily.Monospace
-                            ),
+                            inlineCodeStyle,
                             styleStart,
                             this.length
                         )
+
+                        val codeMarkdownLength = 1
+                        mapping.skipAddSkipMappings(codeMarkdownLength, codeContent.length)
                     }
 
                     TokenType.LINK -> {
@@ -151,10 +153,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                         val styleStart = this.length
                         append(linkText)
                         addStyle(
-                            SpanStyle(
-                                color = Color.Blue,
-                                textDecoration = TextDecoration.Underline
-                            ),
+                            linkStyle,
                             styleStart,
                             this.length
                         )
@@ -166,7 +165,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                             end = this.length
                         )
 
-                        // Adding the mappings up to the end of link
+                        // Adding the mappings up to the end of the link
                         mapping.skipMappings(1)
                         mapping.addPlainMappings(linkText.length)
                         mapping.skipMappings(1)
@@ -181,7 +180,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                         val styleStart = this.length
                         append(boldContent)
                         addStyle(
-                            SpanStyle(fontWeight = FontWeight.Bold),
+                            boldStyle,
                             styleStart,
                             this.length
                         )
@@ -195,7 +194,7 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                         val styleStart = this.length
                         append(italicContent)
                         addStyle(
-                            SpanStyle(fontStyle = FontStyle.Italic),
+                            italicStyle,
                             styleStart,
                             this.length
                         )
@@ -210,34 +209,38 @@ class MarkdownVisualTransformation(private val cursorPosition: Int) : VisualTran
                         val styleStart = this.length
                         append(headingText)
                         addStyle(
-                            SpanStyle(
-                                fontSize = if (headingLevel == 1) 26.sp else 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (headingLevel == 1) Color(0xFFA75CF2) else Color(0xFF48D883)
-                            ),
+                            if (headingLevel == 1) headingStyle1 else headingStyle2,
                             styleStart,
                             this.length
                         )
+
+                        mapping.skipMappings(headingLevel + 1)
+                        mapping.addPlainMappings(headingText.length)
                     }
 
                     TokenType.LIST -> {
                         val listItem = token.groups[0]
-                        append("• $listItem\n")
+                        append("• $listItem")
+
+                        mapping.addPlainMappings(listItem.length + 2);
                     }
 
                     TokenType.BLOCKQUOTE -> {
-                        val quoteText = token.groups[0]
+                        val (whitespace, quoteText) = token.groups
                         val styleStart = this.length
+                        append(whitespace)
                         append(quoteText)
                         addStyle(
-                            SpanStyle(
-                                background = Color(0xFFE0E0E0),
-                                fontStyle = FontStyle.Italic
-                            ),
+                            blockquoteStyle,
                             styleStart,
                             this.length
                         )
-                        append("\n")
+
+                        // Skip the ">"
+                        mapping.skipMapping()
+                        // Add plain mappings for whitespace and quote text
+                        mapping.addPlainMappings(whitespace.length)
+                        mapping.addPlainMappings(quoteText.length)
                     }
                 }
                 currentIndex = token.end

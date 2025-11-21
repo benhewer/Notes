@@ -5,6 +5,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
@@ -89,7 +90,7 @@ class MarkdownVisualTransformationTest {
 
     fun checkCursorMappings(text: String, expected: List<Int>) {
         // Used to update mapping table.
-        transformation.filter(AnnotatedString(text)).text
+        transformation.filter(AnnotatedString(text))
 
         val originalIndices = (0..text.length).toList()
         val transformedIndices = originalIndices.map(offsetMapping::originalToTransformed)
@@ -133,11 +134,53 @@ class MarkdownVisualTransformationTest {
     }
 
     @Test
-    fun`Cursor mapping is correct for code block`() {
+    fun `Cursor mapping is correct for code block`() {
         val text = "This is ```SomeCode() { \n" +
                 "// do something\n" +
                 "}```"
         val expected = (0..7) + 7 + 7 + (7..38) + 38 + 38 + 38 + 39
+
+        checkCursorMappings(text, expected)
+    }
+
+    @Test
+    fun `Cursor mapping is correct for inline code`() {
+        val text = "This is `inline code`"
+        val expected = (0..7) + (7..18) + 18 + 19
+
+        checkCursorMappings(text, expected)
+    }
+
+    @Test
+    fun `Cursor mapping is correct for heading`() {
+        // Set the cursor position to the outside of Markdown
+        setCursorPosition(30)
+        val text1 = "# This is heading 1"
+        val text2 = "## This is heading 2"
+
+        val expected1 = listOf(0) + 0 + (0..17)
+        val expected2 = listOf(0) + 0 + 0 + (0..17)
+
+        checkCursorMappings(text1, expected1)
+        checkCursorMappings(text2, expected2)
+    }
+
+    @Test
+    fun `Cursor mapping is correct for list item`() {
+        // Set the cursor position to the outside of Markdown
+        setCursorPosition(30)
+        val text = "- This is a list item"
+        val expected = (0..text.length).toList()
+
+        checkCursorMappings(text, expected)
+    }
+
+    @Test
+    fun `Cursor mapping is correct for blockquote`() {
+        // Set the cursor position to the outside of Markdown
+        setCursorPosition(30)
+        val text = "> This is a quote"
+        val expected = listOf(0) + (0..16)
 
         checkCursorMappings(text, expected)
     }
@@ -149,5 +192,26 @@ class MarkdownVisualTransformationTest {
         val expected = (0..text.length).toList()
 
         checkCursorMappings(text, expected)
+    }
+
+    @Test
+    fun `Cursor mapping is correct with cursor at end of Markdown element`() {
+        setCursorPosition(20)
+        val text = "> This is a quote"
+        val transformedText = transformation.filter(AnnotatedString(text)).text
+
+        val expected =
+            buildAnnotatedString {
+                append("This is a quote")
+                addStyle(
+                    SpanStyle(
+                        background = Color(0xFFE0E0E0),
+                        fontStyle = FontStyle.Italic
+                    ),
+                    0,
+                    this.length
+                )
+            }
+        assertEquals(expected, transformedText)
     }
 }

@@ -29,6 +29,10 @@ class CursorMapping {
         }
     }
 
+    fun skipMapping() {
+        skipMappings(1)
+    }
+
     fun skipMappings(count: Int) {
         // If not empty, the mapping will be on the correct
         // index, but too far forward with the transformedIndex
