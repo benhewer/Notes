@@ -1,9 +1,13 @@
 package notes.project.notes
 
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import notes.project.notes.ui.theme.textColor
 
 @Composable
 fun MarkdownTextField(
@@ -23,5 +27,7 @@ fun MarkdownTextField(
         visualTransformation = MarkdownVisualTransformation(
             cursorPosition = text.selection.start,
         ),
+        cursorBrush = SolidColor(textColor),
+        textStyle = TextStyle(color = textColor),
     )
 }

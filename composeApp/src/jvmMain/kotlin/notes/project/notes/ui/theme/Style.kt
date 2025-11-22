@@ -9,14 +9,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 
 val codeBlockStyle = SpanStyle(
-    background = Color(0xFFEFEFEF),
-    color = Color(0xFF333333),
+    background = codeBackgroundColor,
+    color = codeTextColor,
     fontSize = 16.sp,
     fontFamily = FontFamily.Monospace
 )
 
 val inlineCodeStyle = SpanStyle(
-    background = Color.LightGray,
+    background = codeBackgroundColor,
     fontSize = 14.sp,
     fontFamily = FontFamily.Monospace
 )
@@ -26,23 +26,27 @@ val linkStyle = SpanStyle(
     textDecoration = TextDecoration.Underline
 )
 
-val boldStyle = SpanStyle(fontWeight = FontWeight.Bold)
+val boldStyle = SpanStyle(
+    fontWeight = FontWeight.Bold
+)
 
-val italicStyle = SpanStyle(fontStyle = FontStyle.Italic)
+val italicStyle = SpanStyle(
+    fontStyle = FontStyle.Italic
+)
 
 val headingStyle1 = SpanStyle(
     fontSize =  26.sp,
     fontWeight = FontWeight.Bold,
-    color = Color(0xFFA75CF2)
+    color = heading1Color
 )
 
 val headingStyle2 = SpanStyle(
     fontSize = 22.sp,
     fontWeight = FontWeight.Bold,
-    color = Color(0xFF48D883)
+    color = heading2Color
 )
 
 val blockquoteStyle = SpanStyle(
-    background = Color(0xFFE0E0E0),
+    background = codeBackgroundColor,
     fontStyle = FontStyle.Italic
 )

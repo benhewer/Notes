@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
+import notes.project.notes.ui.theme.backgroundColor
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -19,7 +20,7 @@ fun App() {
         var showContent by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(backgroundColor)
                 .safeContentPadding()
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -31,7 +32,7 @@ fun App() {
             MarkdownTextField(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(backgroundColor),
                 value = body,
                 onValueChange = { body = it },
             )
